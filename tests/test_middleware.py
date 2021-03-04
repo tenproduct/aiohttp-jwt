@@ -69,7 +69,7 @@ async def test_forbidden_on_wrong_secret(
     response = await client.get('/foo', headers={
         'Authorization': 'Bearer {}'.format(token),
     })
-    assert response.status == 403
+    assert response.status == 401
     assert 'Invalid authorization token' in response.reason
 
 
@@ -91,7 +91,7 @@ def form_auth(scheme, correct):
         ("Bearer", True, True, 200),
         ("Invalid_scheme", True, False, 200),
         ("Invalid_scheme", False, False, 200),
-        ("Bearer", False, False, 403),
+        ("Bearer", False, False, 401),
         ("", False, False, 200),
     ]
 )
@@ -244,3 +244,21 @@ async def test_custom_auth_scheme(
             token.decode('utf-8')),
     })
     assert response.status == resp_status
+
+
+async def test_pass_preflight_options_request(
+        create_app, aiohttp_client, fake_payload, token):
+    async def handler(request):
+        return web.json_response({})
+
+    views = (('/foo', handler),)
+    client = await aiohttp_client(
+        create_app(views=views),
+    )
+    response = await client.options('/foo')
+    assert response.status == 200
+
+    response = await client.options('/foo', headers={
+        'Authorization': 'Bearer {}'.format(token.decode('utf-8')),
+    })
+    assert response.status == 200

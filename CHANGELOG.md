@@ -1,3 +1,27 @@
+## v0.6.1
+
+* Minor fix for middleware initialization check inside decorators.
+
+## v0.6.0
+
+* Raise `UnAuthorized` instead of `Forbidden` [#129](https://github.com/hzlmn/aiohttp-jwt/pull/129). Thanks [@rockwelln](https://github.com/rockwelln)
+
+* Added preflight (OPTIONS) request skip [#139](https://github.com/hzlmn/aiohttp-jwt/pull/139). Thanks [@ckkz-it](https://github.com/ckkz-it)
+
+## v0.5.0
+
+* Switched to new style aiohttp middleware [#94](https://github.com/hzlmn/aiohttp-jwt/pull/94). Thanks [@Ranc58](github.com/Ranc58) 
+
+## v0.4.0
+
+* Added `issue` and `audience` claims support [#80](https://github.com/hzlmn/aiohttp-jwt/pull/80) . Thanks [@idegree](github.com/idegree)
+
+## v0.3.0
+
+* Added [`auth_scheme`](https://github.com/hzlmn/aiohttp-jwt/blob/master/aiohttp_jwt/middleware.py#L24) option to middleware, that allows customization of authorization header prefix [#77](https://github.com/hzlmn/aiohttp-jwt/pull/77). By default value is `Bearer`. Thanks @gbarbaten 
+  
+* Added explicit exception when decorators are used without proper middleware initialization & minor cleaning [#85](https://github.com/hzlmn/aiohttp-jwt/pull/85)
+
 ## v0.2.0
 
  * Added support for [class based views](https://docs.aiohttp.org/en/stable/web_quickstart.html#class-based-views) in decorators [#52](https://github.com/hzlmn/aiohttp-jwt/issues/52). Thanks [@citijk](github.com/citijk) for the report!
