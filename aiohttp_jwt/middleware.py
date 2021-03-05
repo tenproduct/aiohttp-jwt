@@ -23,7 +23,8 @@ def JWTMiddleware(
     algorithms=None,
     auth_scheme='Bearer',
     audience=None,
-    issuer=None
+    issuer=None,
+    jwt_auth_cookie=None,
 ):
     if not (secret_or_pub_key and isinstance(secret_or_pub_key, str)):
         raise RuntimeError(
@@ -57,6 +58,22 @@ def JWTMiddleware(
             except ValueError:
                 raise web.HTTPForbidden(
                     reason='Invalid authorization header',
+                )
+
+            if not re.match(auth_scheme, scheme):
+                if credentials_required:
+                    raise web.HTTPForbidden(
+                        reason='Invalid token scheme',
+                    )
+                return await handler(request)
+        elif jwt_auth_cookie in request.cookies:
+            try:
+                scheme, token = request.cookies.get(
+                    jwt_auth_cookie
+                ).strip().split(' ')
+            except ValueError:
+                raise web.HTTPForbidden(
+                    reason='Invalid authorization token',
                 )
 
             if not re.match(auth_scheme, scheme):

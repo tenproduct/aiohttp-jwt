@@ -106,3 +106,6 @@ venv.bak/
 sample/
 .vscode/
 .pytest_cache/
+
+# Pycharm
+.idea/
