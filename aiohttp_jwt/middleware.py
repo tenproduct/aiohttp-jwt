@@ -3,7 +3,7 @@ import re
 from functools import partial
 
 import jwt
-from aiohttp import web, hdrs
+from aiohttp import hdrs, web
 
 from .utils import check_request, invoke
 
@@ -20,7 +20,7 @@ def JWTMiddleware(
     token_getter=None,
     is_revoked=None,
     store_token=False,
-    algorithms=None,
+    algorithms="HS256",
     auth_scheme='Bearer',
     audience=None,
     issuer=None

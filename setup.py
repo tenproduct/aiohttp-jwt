@@ -26,7 +26,7 @@ def read(*parts):
 packages = ['aiohttp_jwt']
 
 
-install_requires = ['aiohttp>=2.3.5', 'PyJWT>=1.6.0']
+install_requires = ['aiohttp>=2.3.5', 'PyJWT==2.4.0']
 
 
 classifiers = ['Intended Audience :: Developers',

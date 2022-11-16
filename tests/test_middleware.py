@@ -17,7 +17,7 @@ async def test_get_payload(create_app, aiohttp_client, fake_payload, token):
     routes = (('/foo', handler),)
     client = await aiohttp_client(create_app(routes))
     response = await client.get('/foo', headers={
-        'Authorization': 'Bearer {}'.format(token.decode('utf-8')),
+        'Authorization': 'Bearer {}'.format(token),
     })
     assert response.status == 200
 
@@ -40,7 +40,7 @@ async def test_throw_on_wrong_token_scheme(
     routes = (('/foo', handler),)
     client = await aiohttp_client(create_app(routes))
     response = await client.get('/foo', headers={
-        'Authorization': 'Wrong {}'.format(token.decode('utf-8')),
+        'Authorization': 'Wrong {}'.format(token),
     })
     assert response.status == 403
     assert 'Invalid token scheme' in response.reason
@@ -65,7 +65,7 @@ async def test_forbidden_on_wrong_secret(
         return web.json_response({})
     routes = (('/foo', handler),)
     client = await aiohttp_client(create_app(routes))
-    token = jwt.encode(fake_payload, 'wrong').decode('utf-8')
+    token = jwt.encode(fake_payload, 'wrong')
     response = await client.get('/foo', headers={
         'Authorization': 'Bearer {}'.format(token),
     })
@@ -79,7 +79,7 @@ def form_auth(scheme, correct):
     scheme = scheme + " {}"
     if correct:
         auth = scheme.format(
-            jwt.encode({'foo': 'bar'}, 'secret').decode('utf-8')
+            jwt.encode({'foo': 'bar'}, 'secret')
         )
     else:
         auth = scheme.format("Invalidtoken")
@@ -139,7 +139,7 @@ async def test_request_property(
         ),
     )
     response = await client.get('/foo', headers={
-        'Authorization': 'Bearer {}'.format(token.decode('utf-8')),
+        'Authorization': 'Bearer {}'.format(token),
     })
     assert response.status == 200
 
@@ -153,7 +153,7 @@ async def test_storing_token(create_app, aiohttp_client, fake_payload, token):
     token_property = 'token'
 
     async def handler(request):
-        assert request.get(token_property) == token
+        assert request.get(token_property).decode('utf-8') == token
         return web.json_response({})
 
     routes = (('/foo', handler),)
@@ -161,7 +161,7 @@ async def test_storing_token(create_app, aiohttp_client, fake_payload, token):
         create_app(routes, store_token=token_property),
     )
     response = await client.get('/foo', headers={
-        'Authorization': 'Bearer {}'.format(token.decode('utf-8')),
+        'Authorization': 'Bearer {}'.format(token),
     })
     assert response.status == 200
     assert (await response.json()) == {}
@@ -192,7 +192,7 @@ async def test_token_getter(
         ),
     )
     response = await client.get('/foo', params={
-        'auth_token': token.decode('utf-8'),
+        'auth_token': token,
     })
     assert response.status == 200
 
@@ -216,7 +216,7 @@ async def test_token_revoked(
     routes = (('/foo', handler),)
     client = await aiohttp_client(create_app(routes, is_revoked=check))
     response = await client.get('/foo', headers={
-        'Authorization': 'Bearer {}'.format(token.decode('utf-8')),
+        'Authorization': 'Bearer {}'.format(token),
     })
     assert response.status == 403
     assert 'Token is revoked' in response.reason
@@ -241,7 +241,7 @@ async def test_custom_auth_scheme(
     response = await client.get('/foo', headers={
         'Authorization': '{} {}'.format(
             provided_auth_scheme,
-            token.decode('utf-8')),
+            token),
     })
     assert response.status == resp_status
 
@@ -259,6 +259,6 @@ async def test_pass_preflight_options_request(
     assert response.status == 200
 
     response = await client.options('/foo', headers={
-        'Authorization': 'Bearer {}'.format(token.decode('utf-8')),
+        'Authorization': 'Bearer {}'.format(token),
     })
     assert response.status == 200

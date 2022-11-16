@@ -94,7 +94,7 @@ async def test_check_permissions(
     client = await aiohttp_client(
         create_app(routes, credentials_required=False))
     response = await client.get('/foo', headers={
-        'Authorization': 'Bearer {}'.format(token.decode('utf-8'))
+        'Authorization': 'Bearer {}'.format(token)
     })
     assert response.status == 200
 
@@ -111,7 +111,7 @@ async def test_check_permissions_class(
     client = await aiohttp_client(
         create_app(routes, credentials_required=False))
     response = await client.get('/foo', headers={
-        'Authorization': 'Bearer {}'.format(token.decode('utf-8'))
+        'Authorization': 'Bearer {}'.format(token)
     })
     assert response.status == 200
 
@@ -129,7 +129,7 @@ async def test_check_permissions_view(
     client = await aiohttp_client(
         create_app(views=views, credentials_required=False))
     response = await client.get('/foo', headers={
-        'Authorization': 'Bearer {}'.format(token.decode('utf-8'))
+        'Authorization': 'Bearer {}'.format(token)
     })
     assert response.status == 200
 
@@ -145,7 +145,7 @@ async def test_insufficient_scopes(
     client = await aiohttp_client(
         create_app(routes, credentials_required=False))
     response = await client.get('/foo', headers={
-        'Authorization': 'Bearer {}'.format(token.decode('utf-8'))
+        'Authorization': 'Bearer {}'.format(token)
     })
     assert response.status == 403
     assert 'Insufficient' in response.reason
@@ -165,7 +165,7 @@ async def test_scopes_strategies_match_any(
     client = await aiohttp_client(
         create_app(routes, credentials_required=False))
     response = await client.get('/foo', headers={
-        'Authorization': 'Bearer {}'.format(token.decode('utf-8'))
+        'Authorization': 'Bearer {}'.format(token)
     })
     assert response.status == 200
 
@@ -181,7 +181,7 @@ async def test_check_permissions_scopes_string(
     client = await aiohttp_client(
         create_app(routes, credentials_required=False))
     response = await client.get('/foo', headers={
-        'Authorization': 'Bearer {}'.format(token.decode('utf-8'))
+        'Authorization': 'Bearer {}'.format(token)
     })
     assert response.status == 200
 
@@ -204,7 +204,7 @@ async def test_login_required_with_wrong_auth_scheme(
     client = await aiohttp_client(
         create_app(routes, credentials_required=False))
     response = await client.get('/foo', headers={
-        'Authorization': 'InvalidScheme {}'.format(token.decode('utf-8'))
+        'Authorization': 'InvalidScheme {}'.format(token)
     })
     assert response.status == 401
     assert 'Authorization required' in response.reason
@@ -222,7 +222,7 @@ async def test_check_permissions_with_wrong_auth_scheme(
     client = await aiohttp_client(
         create_app(routes, credentials_required=False))
     response = await client.get('/foo', headers={
-        'Authorization': 'InvalidScheme {}'.format(token.decode('utf-8'))
+        'Authorization': 'InvalidScheme {}'.format(token)
     })
     assert response.status == 401
     assert 'Authorization required' in response.reason
