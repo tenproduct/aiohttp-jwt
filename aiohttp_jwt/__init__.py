@@ -1,18 +1,12 @@
-
-__version__ = '0.6.1'
+__version__ = "0.6.1"
 
 from .middleware import JWTMiddleware
-from .permissions import (
-    check_permissions,
-    login_required,
-    match_all,
-    match_any,
-)
+from .permissions import check_permissions, login_required, match_all, match_any
 
 __all__ = (
-    'JWTMiddleware',
-    'check_permissions',
-    'login_required',
-    'match_any',
-    'match_all',
+    "JWTMiddleware",
+    "check_permissions",
+    "login_required",
+    "match_any",
+    "match_all",
 )

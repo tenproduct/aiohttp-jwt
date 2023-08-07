@@ -1,0 +1,13 @@
+version: "3"
+services:
+  aiohttp_jwt_3_6:
+    build:
+      context: .
+      args:
+        python_version: "3.6"
+    volumes:
+      - ./aiohttp_jwt:/tenplatform/aiohttp-jwt/aiohttp_jwt
+      - ./tests:/tenplatform/aiohttp-jwt/tests
+
+
+
