@@ -1,15 +1,13 @@
 import jwt
 from aiohttp import web
 
-from aiohttp_jwt import JWTMiddleware, check_permissions, match_any
+from aiohttp_jwt import check_permissions, JWTMiddleware, match_any
 
 sharable_secret = "secret"
 
 
 async def get_token(request):
-    return jwt.encode(
-        {"username": "johndoe", "scopes": ["username:johndoe"]}, sharable_secret
-    )
+    return jwt.encode({"username": "johndoe", "scopes": ["username:johndoe"]}, sharable_secret)
 
 
 jwt_middleware = JWTMiddleware(
@@ -22,13 +20,7 @@ jwt_middleware = JWTMiddleware(
 
 
 async def public_handler(request):
-    return web.json_response(
-        {
-            "username": request["user"].get("username")
-            if "user" in request
-            else "anonymous"
-        }
-    )
+    return web.json_response({"username": request["user"].get("username") if "user" in request else "anonymous"})
 
 
 @check_permissions(["app/user:admin", "username:johndoe"], comparison=match_any)

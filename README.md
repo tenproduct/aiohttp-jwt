@@ -1,6 +1,6 @@
 ## aiohttp-jwt 
 [![Downloads](https://pepy.tech/badge/aiohttp-jwt/month)](https://pepy.tech/project/aiohttp-jwt/month)
-[![Build Status](https://travis-ci.org/hzlmn/aiohttp-jwt.svg?branch=master)](https://travis-ci.org/hzlmn/aiohttp-jwt)
+[![TeamCity build status](https://teamcity.tensrv.com/app/rest/builds/buildType:id:Apps_CoreServicesPython_AiohttpJwt_RunTestsForLibrary/statusIcon.svg)](https://teamcity.tensrv.com/viewType.html?buildTypeId=Apps_CoreServicesPython_AiohttpJwt_RunTestsForLibrary)
 [![codecov](https://codecov.io/gh/hzlmn/aiohttp-jwt/branch/master/graph/badge.svg)](https://codecov.io/gh/hzlmn/aiohttp-jwt)
 
 The library provides `aiohttp` middleware and helper utils for working with JSON web tokens.
@@ -10,11 +10,45 @@ The library provides `aiohttp` middleware and helper utils for working with JSON
   * Latest docs [TBD]()
   * Contributions are highly welcome!
 
+## Getting started (docker-based)
+
+```shell
+make build
+```
+
+## Getting started (locally)
+
+```shell
+# Create virtualenv
+python -m venv .venv
+
+# Activate virtualenv
+source .venv/bin/activate
+
+# Install requirements
+pip install -r requirements.txt
+```
+
+## Run tests (docker-based)
+
+```shell
+make test
+```
+
+## Compile requirements (docker-based)
+
+```shell
+# Run this if you have an ed25519 ssh key pair
+make pip-compile-ed-25519
+
+# Run this if you have an rsa ssh key pair
+make pip-compile-rsa
+```
+
 
 ## Requirements
  - [Aiohttp >= 2.3.5](https://github.com/aio-libs/aiohttp)
  - [PyJWT](https://github.com/jpadilla/pyjwt)
-
 
 ## Install
 ```bash
