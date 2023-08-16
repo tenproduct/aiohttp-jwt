@@ -4,7 +4,7 @@ import jwt
 from aiohttp import web
 from aiohttp.web import json_response
 
-from aiohttp_jwt import JWTMiddleware, check_permissions, match_any
+from aiohttp_jwt import check_permissions, JWTMiddleware, match_any
 
 logger = logging.getLogger(__name__)
 
