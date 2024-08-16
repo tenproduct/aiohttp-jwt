@@ -40,7 +40,7 @@ help:
 .PHONY: build
 build:
 	$(call print_h1,"BUILDING","IMAGES")
-	@docker build --ssh default -t tenproduct/aiohttp_jwt_3_6 --build-arg python_version=3.9 .
+	@docker build --ssh default -t tenproduct/aiohttp_jwt_3_9 --build-arg python_version=3.9 .
 	@docker-compose build --parallel
 	$(call print_h1,"IMAGES","BUILT")
 
@@ -65,7 +65,7 @@ pip-compile-ed-25519: build-python-3.9
 .PHONY: pip-compile-rsa
 pip-compile-rsa: build-python-3.9
 	$(call print_h1,"COMPILING","REQUIREMENTS","USING","RSA")
-	docker run --entrypoint= --rm --tty --interactive --env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock  -v ~/.ssh/id_rsa:/id_rsa:ro -v ~/.ssh/id_rsa.pub:/id_rsa.pub:ro -v ${PWD}:/tenplatform/aiohttp-jwt tenproduct/aiohttp_jwt_3_6 sh -c "ssh-add /id_rsa && pip-compile --no-header --output-file=requirements.txt"
+	docker run --entrypoint= --rm --tty --interactive --env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock  -v ~/.ssh/id_rsa:/id_rsa:ro -v ~/.ssh/id_rsa.pub:/id_rsa.pub:ro -v ${PWD}:/tenplatform/aiohttp-jwt tenproduct/aiohttp_jwt_3_9 sh -c "ssh-add /id_rsa && pip-compile --no-header --output-file=requirements.txt"
 	$(call print_h1,"REQUIREMENTS","COMPILED")
 
 #------------------------------
@@ -75,14 +75,14 @@ pip-compile-rsa: build-python-3.9
 .PHONY: lint
 lint: build-python-3.9
 	$(call print_h1,"LINTING","CODE")
-	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_6 flake8 .
-	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_6 isort --check-only -rc aiohttp_jwt setup.py tests --diff
+	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_9 flake8 .
+	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_9 isort --check-only -rc aiohttp_jwt setup.py tests --diff
 	$(call print_h1,"LINTING","COMPLETED")
 
 .PHONY: format
 format: build-python-3.9
 	$(call print_h1,"FORMATTING","CODE")
-	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_6 isort -rc aiohttp_jwt setup.py tests
+	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_9 isort -rc aiohttp_jwt setup.py tests
 	$(call print_h1,"FORMATTING","COMPLETED")
 
 #------------------------------
@@ -92,5 +92,5 @@ format: build-python-3.9
 .PHONY: test
 test: build-python-3.9
 	$(call print_h1,"RUNNING","ALL","TESTS")
-	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_6 pytest tests/
+	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_9 pytest tests/
 	$(call print_h1,"ALL","TESTS","COMPLETED")
