@@ -1,5 +1,5 @@
 ARG python_version
-FROM python:${python_version:-3.8}-slim
+FROM python:${python_version:-3.9}-slim
 
 ENV PYTHONUNBUFFERED=1 \
     VIRTUAL_ENV=/opt/venv \
