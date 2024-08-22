@@ -76,13 +76,13 @@ pip-compile-rsa: build-python-3.9
 lint: build-python-3.9
 	$(call print_h1,"LINTING","CODE")
 	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_9 flake8 .
-	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_9 isort --check-only -rc aiohttp_jwt setup.py tests --diff
+	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_9 isort --check-only aiohttp_jwt setup.py tests --diff
 	$(call print_h1,"LINTING","COMPLETED")
 
 .PHONY: format
 format: build-python-3.9
 	$(call print_h1,"FORMATTING","CODE")
-	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_9 isort -rc aiohttp_jwt setup.py tests
+	@docker-compose run --rm --entrypoint= aiohttp_jwt_3_9 isort aiohttp_jwt setup.py tests
 	$(call print_h1,"FORMATTING","COMPLETED")
 
 #------------------------------

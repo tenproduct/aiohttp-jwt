@@ -15,6 +15,7 @@ def patch_module():
     middleware._request_property = old_value
 
 
+@pytest.mark.asyncio
 async def test_login_required_jwt_not_initialized(patch_module, create_app, aiohttp_client):
     @login_required
     async def handler(request):
@@ -26,6 +27,7 @@ async def test_login_required_jwt_not_initialized(patch_module, create_app, aioh
     assert response.status == 500
 
 
+@pytest.mark.asyncio
 async def test_login_required(create_app, aiohttp_client):
     @login_required
     async def handler(request):
@@ -38,6 +40,7 @@ async def test_login_required(create_app, aiohttp_client):
     assert "Authorization required" in response.reason
 
 
+@pytest.mark.asyncio
 async def test_login_required_class(create_app, fake_payload, aiohttp_client, secret):
     class View:
         @login_required
@@ -51,6 +54,7 @@ async def test_login_required_class(create_app, fake_payload, aiohttp_client, se
     assert "Authorization required" in response.reason
 
 
+@pytest.mark.asyncio
 async def test_login_required_view(create_app, fake_payload, aiohttp_client, secret):
     class App(web.View):
         @login_required
@@ -65,6 +69,7 @@ async def test_login_required_view(create_app, fake_payload, aiohttp_client, sec
     assert "Authorization required" in response.reason
 
 
+@pytest.mark.asyncio
 async def test_check_permissions_jwt_not_initialized(patch_module, create_app, aiohttp_client):
     @check_permissions([])
     async def handler(request):
@@ -76,6 +81,7 @@ async def test_check_permissions_jwt_not_initialized(patch_module, create_app, a
     assert response.status == 500
 
 
+@pytest.mark.asyncio
 async def test_check_permissions(create_app, fake_payload, aiohttp_client, secret):
     token = jwt.encode({**fake_payload, "scopes": ["view"]}, secret)
 
@@ -89,6 +95,7 @@ async def test_check_permissions(create_app, fake_payload, aiohttp_client, secre
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_check_permissions_class(create_app, fake_payload, aiohttp_client, secret):
     token = jwt.encode({**fake_payload, "scopes": ["view"]}, secret)
 
@@ -103,6 +110,7 @@ async def test_check_permissions_class(create_app, fake_payload, aiohttp_client,
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_check_permissions_view(create_app, fake_payload, aiohttp_client, secret):
     token = jwt.encode({**fake_payload, "scopes": ["view"]}, secret)
 
@@ -117,6 +125,7 @@ async def test_check_permissions_view(create_app, fake_payload, aiohttp_client, 
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_insufficient_scopes(create_app, fake_payload, aiohttp_client, secret):
     token = jwt.encode({**fake_payload, "scopes": ["view"]}, secret)
 
@@ -131,6 +140,7 @@ async def test_insufficient_scopes(create_app, fake_payload, aiohttp_client, sec
     assert "Insufficient" in response.reason
 
 
+@pytest.mark.asyncio
 async def test_scopes_strategies_match_any(create_app, fake_payload, aiohttp_client, secret):
     token = jwt.encode({**fake_payload, "scopes": ["admin"]}, secret)
 
@@ -150,6 +160,7 @@ async def test_scopes_strategies_match_any(create_app, fake_payload, aiohttp_cli
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_check_permissions_scopes_string(create_app, fake_payload, aiohttp_client, secret):
     token = jwt.encode({**fake_payload, "scopes": ["view", "admin"]}, secret)
 
@@ -163,12 +174,14 @@ async def test_check_permissions_scopes_string(create_app, fake_payload, aiohttp
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("comparison", [None, "foo", {}, []])
 async def test_check_permissions_wrong_comparison(comparison):
     with pytest.raises(TypeError):
         check_permissions(["foo"], comparison=comparison)
 
 
+@pytest.mark.asyncio
 async def test_login_required_with_wrong_auth_scheme(create_app, fake_payload, aiohttp_client, secret):
     token = jwt.encode({**fake_payload}, secret)
 
@@ -183,6 +196,7 @@ async def test_login_required_with_wrong_auth_scheme(create_app, fake_payload, a
     assert "Authorization required" in response.reason
 
 
+@pytest.mark.asyncio
 async def test_check_permissions_with_wrong_auth_scheme(create_app, fake_payload, aiohttp_client, secret):
     token = jwt.encode({**fake_payload, "scopes": ["view"]}, secret)
 
