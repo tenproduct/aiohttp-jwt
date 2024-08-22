@@ -10,6 +10,7 @@ def test_throw_on_invalid_secret():
         JWTMiddleware(secret_or_pub_key="")
 
 
+@pytest.mark.asyncio
 async def test_get_payload(create_app, aiohttp_client, fake_payload, token):
     async def handler(request):
         assert request.get("payload") == fake_payload
@@ -26,6 +27,7 @@ async def test_get_payload(create_app, aiohttp_client, fake_payload, token):
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_throw_on_missing_token(create_app, aiohttp_client, fake_payload, token):
     async def handler(request):
         return web.json_response({})
@@ -37,6 +39,7 @@ async def test_throw_on_missing_token(create_app, aiohttp_client, fake_payload, 
     assert "Missing authorization" in response.reason
 
 
+@pytest.mark.asyncio
 async def test_throw_on_wrong_token_scheme(create_app, aiohttp_client, fake_payload, token):
     async def handler(request):
         return web.json_response({})
@@ -53,6 +56,7 @@ async def test_throw_on_wrong_token_scheme(create_app, aiohttp_client, fake_payl
     assert "Invalid token scheme" in response.reason
 
 
+@pytest.mark.asyncio
 async def test_throw_on_wrong_header_format(create_app, aiohttp_client, fake_payload, token):
     async def handler(request):
         return web.json_response({})
@@ -69,6 +73,7 @@ async def test_throw_on_wrong_header_format(create_app, aiohttp_client, fake_pay
     assert "Invalid authorization header" in response.reason
 
 
+@pytest.mark.asyncio
 async def test_forbidden_on_wrong_secret(create_app, aiohttp_client, fake_payload):
     async def handler(request):
         return web.json_response({})
@@ -107,6 +112,7 @@ def form_auth(scheme, correct):
         ("", False, False, 200),
     ],
 )
+@pytest.mark.asyncio
 async def test_credentials_not_required(
     schema,
     correct_token,
@@ -130,6 +136,7 @@ async def test_credentials_not_required(
     assert response.status == resp_status
 
 
+@pytest.mark.asyncio
 async def test_whitelisted_path(create_app, aiohttp_client, fake_payload):
     async def handler(request):
         return web.json_response({})
@@ -142,6 +149,7 @@ async def test_whitelisted_path(create_app, aiohttp_client, fake_payload):
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_request_property(create_app, aiohttp_client, fake_payload, token):
     request_property = "custom"
 
@@ -165,11 +173,13 @@ async def test_request_property(create_app, aiohttp_client, fake_payload, token)
     assert response.status == 200
 
 
+@pytest.mark.asyncio
 async def test_request_property_invalid_type(create_app):
     with pytest.raises(TypeError):
         create_app([], request_property={})
 
 
+@pytest.mark.asyncio
 async def test_storing_token(create_app, aiohttp_client, fake_payload, token):
     token_property = "token"
 
@@ -191,6 +201,7 @@ async def test_storing_token(create_app, aiohttp_client, fake_payload, token):
     assert (await response.json()) == {}
 
 
+@pytest.mark.asyncio
 async def get_token_coro(request):
     return request.query.get("auth_token")
 
@@ -199,6 +210,7 @@ def get_token(request):
     return request.query.get("auth_token")
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("getter", [get_token_coro, get_token])
 async def test_token_getter(getter, create_app, aiohttp_client, fake_payload, token):
     async def handler(request):
@@ -229,6 +241,7 @@ async def is_revoked_coro(request, payload):
     return True
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "check",
     [
@@ -252,6 +265,7 @@ async def test_token_revoked(check, create_app, aiohttp_client, fake_payload, to
     assert "Token is revoked" in response.reason
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "configured_auth_scheme, provided_auth_scheme, resp_status",
     [
@@ -279,6 +293,7 @@ async def test_custom_auth_scheme(
     assert response.status == resp_status
 
 
+@pytest.mark.asyncio
 async def test_pass_preflight_options_request(create_app, aiohttp_client, fake_payload, token):
     async def handler(request):
         return web.json_response({})

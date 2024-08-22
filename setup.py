@@ -28,7 +28,7 @@ def read(*parts):
 packages = ["aiohttp_jwt"]
 
 
-install_requires = ["aiohttp>=2.3.5", "PyJWT==2.4.0"]
+install_requires = ["aiohttp>=3.10.5", "PyJWT>=2.9.0"]
 
 
 classifiers = [
