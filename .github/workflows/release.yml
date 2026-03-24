@@ -28,8 +28,6 @@ jobs:
     name: Run Tests
     uses: ./.github/workflows/test.yml
     secrets:
-      GH_APP_ID: ${{ secrets.GH_APP_ID }}
-      GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   release:
@@ -70,7 +68,7 @@ jobs:
         with:
           tag_prefix: "v"
           major_pattern: "(BREAKING CHANGE:|!)"
-          minor_pattern: "/^(feat|refactor)(\\(.*\\))?:/"
+          minor_pattern: "^(feat|refactor)(\\(.*\\))?:"
           version_format: "${major}.${minor}.${patch}"
           user_format_type: "csv"
           branch: "HEAD"
@@ -98,22 +96,20 @@ jobs:
             exit 1
           fi
 
-      - name: Inject version into source files
+      - name: Update version in source files
+        if: inputs.commit_hash == ''
         env:
           VERSION: ${{ steps.vars.outputs.VERSION }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           sed -i "s/__version__ = \".*\"/__version__ = \"$VERSION\"/" aiohttp_jwt/__init__.py
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Build package
-        run: |
-          pip install build
-          python -m build
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add aiohttp_jwt/__init__.py pyproject.toml
+          git commit -m "chore: auto bump version to $VERSION [skip ci]"
+          git push origin HEAD:"$REF_NAME"
 
       - name: Check tag does not already exist
         if: github.event_name == 'push'
@@ -154,4 +150,3 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
-          files: dist/*

@@ -4,7 +4,7 @@ x-common: &common
   build:
     context: .
   volumes:
-    - ./aiohttp_jwt:/var/aiohttp-jwt/aiohttp_jwt
+    - .:/var/aiohttp-jwt
     - ./tests:/var/aiohttp-jwt/tests
 
 services:
