@@ -16,7 +16,6 @@ on:
         type: string
 
 permissions:
-  id-token: write
   contents: write
 
 concurrency:
@@ -36,22 +35,13 @@ jobs:
     runs-on: self-hosted-arm-1gi
     timeout-minutes: 15
     steps:
-      - name: Generate GitHub App Token
-        id: generate_token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.GH_APP_ID }}
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-          owner: "tenproduct"
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ steps.generate_token.outputs.token }}
 
       - name: Checkout specific commit
-        if: inputs.commit_hash != ''
+        if: github.event_name == 'workflow_dispatch' && inputs.commit_hash != ''
         env:
           TARGET_COMMIT_HASH: ${{ inputs.commit_hash }}
         run: |
@@ -63,7 +53,7 @@ jobs:
 
       - name: Calculate Next Version
         id: semantic
-        if: inputs.version == ''
+        if: github.event_name != 'workflow_dispatch' || inputs.version == ''
         uses: PaulHatch/semantic-version@v5.4.0
         with:
           tag_prefix: "v"
@@ -96,21 +86,6 @@ jobs:
             exit 1
           fi
 
-      - name: Update version in source files
-        if: inputs.commit_hash == ''
-        env:
-          VERSION: ${{ steps.vars.outputs.VERSION }}
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          sed -i "s/__version__ = \".*\"/__version__ = \"$VERSION\"/" aiohttp_jwt/__init__.py
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
-
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add aiohttp_jwt/__init__.py pyproject.toml
-          git commit -m "chore: auto bump version to $VERSION [skip ci]"
-          git push origin HEAD:"$REF_NAME"
-
       - name: Check tag does not already exist
         if: github.event_name == 'push'
         env:
@@ -142,6 +117,11 @@ jobs:
             exit 1
           fi
 
+      - name: Build artifact
+        run: |
+          pip install build
+          python -m build
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -150,3 +130,4 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+          files: dist/*
