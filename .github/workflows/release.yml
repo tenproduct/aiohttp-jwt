@@ -17,10 +17,18 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
+
+env:
+  CODEARTIFACT_AWS_ROLE_ARN: ${{ vars.CODEARTIFACT_AWS_ROLE_ARN }}
+  AWS_REGION: eu-west-1
+  CODEARTIFACT_DOMAIN: ${{ vars.CODEARTIFACT_DOMAIN }}
+  CODEARTIFACT_DOMAIN_OWNER: ${{ vars.CODEARTIFACT_DOMAIN_OWNER }}
+  CODEARTIFACT_REPO: ${{ vars.CODEARTIFACT_REPO }}
 
 jobs:
   test:
@@ -97,30 +105,91 @@ jobs:
             exit 1
           fi
 
-      - name: Create Git Tag
+      - name: Create Local Git Tag
         env:
           VERSION: ${{ steps.vars.outputs.VERSION }}
         run: |
           COMMIT_HASH="$(git rev-parse --short=8 HEAD)"
-
           git fetch --tags
-
-          echo "Creating tag v$VERSION for commit $COMMIT_HASH"
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          echo "Creating local tag v$VERSION for commit $COMMIT_HASH"
           git tag -fa "v$VERSION" -m "Release v$VERSION" HEAD
 
+      - name: Install AWS CLI in the runner
+        run: |
+          if ! command -v aws &> /dev/null; then
+            echo "Installing AWS CLI..."
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+            unzip -q awscliv2.zip
+            sudo ./aws/install --update
+            rm -rf aws awscliv2.zip
+          fi
+          aws --version
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.CODEARTIFACT_AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get CodeArtifact auth token and repo URL
+        id: codeartifact
+        run: |
+          TOKEN=$(aws codeartifact get-authorization-token \
+            --domain ${{ env.CODEARTIFACT_DOMAIN }} \
+            --domain-owner ${{ env.CODEARTIFACT_DOMAIN_OWNER }} \
+            --query authorizationToken \
+            --output text)
+          echo "TOKEN=$TOKEN" >> $GITHUB_OUTPUT
+
+          REPO_URL=$(aws codeartifact get-repository-endpoint \
+            --domain ${{ env.CODEARTIFACT_DOMAIN }} \
+            --domain-owner ${{ env.CODEARTIFACT_DOMAIN_OWNER }} \
+            --repository ${{ env.CODEARTIFACT_REPO }} \
+            --format pypi \
+            --query repositoryEndpoint \
+            --output text)
+          echo "REPO_URL=$REPO_URL" >> $GITHUB_OUTPUT
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry and dynamic versioning plugin
+        run: pip install poetry==2.1.4 "poetry-dynamic-versioning[plugin]==1.10.0"
+
+      - name: Configure Poetry for CodeArtifact
+        env:
+          CODEARTIFACT_TOKEN: ${{ steps.codeartifact.outputs.TOKEN }}
+          REPO_URL: ${{ steps.codeartifact.outputs.REPO_URL }}
+        run: |
+          poetry config repositories.codeartifact "$REPO_URL"
+          poetry config http-basic.codeartifact aws "$CODEARTIFACT_TOKEN"
+
+      - name: Build & Publish to CodeArtifact
+        run: |
+          echo "Building version (resolved by poetry-dynamic-versioning from local tag):"
+          poetry version
+          poetry build
+          poetry publish --repository codeartifact
+
+      - name: Push Git Tag
+        env:
+          VERSION: ${{ steps.vars.outputs.VERSION }}
+        run: |
           echo "Pushing tag v$VERSION..."
-          if git push --force-with-lease=refs/tags/v$VERSION origin "v$VERSION"; then
-            echo "Tag v$VERSION now points to $COMMIT_HASH"
+          if git push origin "v$VERSION"; then
+            echo "Tag v$VERSION pushed successfully"
           else
-            echo "Failed to push tag v$VERSION because the remote reference changed concurrently."
-            echo "Please rerun the workflow to retry."
+            if git ls-remote --exit-code --tags origin "v$VERSION" > /dev/null 2>&1; then
+              echo "::error::Tag v$VERSION already exists on origin. If you intend to retag, delete the remote tag first."
+            else
+              echo "::error::Failed to push tag v$VERSION due to an unexpected error."
+            fi
             exit 1
           fi
-
-      - name: Build artifact
-        run: |
-          pip install build
-          python -m build
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

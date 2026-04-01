@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aiohttp-jwt"
-version = "0.7.2"
+version = "0.0.0"  # placeholder — poetry-dynamic-versioning replaces this with the git tag at build time.
 description = "Provides `aiohttp` middleware and helper utils for working with JSON web tokens."
 authors = ["Ten Product <product@tengroup.com>"]
 readme = "README.md"
@@ -19,3 +19,26 @@ pytest-mock = ">=3.14.0"
 flake8 = "*"
 isort = "*"
 black = ">=24.3.0"
+
+# ── Plugin declaration (tells Poetry to install this plugin automatically) ────
+
+[tool.poetry.requires-plugins]
+poetry-dynamic-versioning = { version = "==1.10.0", extras = ["plugin"] }
+
+# ── Dynamic versioning config ─────────────────────────────────────────────────
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "pep440"
+pattern = "^v(?P<base>\\d+\\.\\d+\\.\\d+)$"
+bump = false
+
+[tool.poetry-dynamic-versioning.substitution]
+files = ["pyproject.toml"]
+
+# ── Build system ──────────────────────────────────────────────────────────────
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning==1.10.0"]
+build-backend = "poetry_dynamic_versioning.backend"
