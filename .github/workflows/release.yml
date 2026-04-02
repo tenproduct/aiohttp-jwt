@@ -1,0 +1,201 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Version (e.g., 1.2.3). Leave empty to auto-calculate.'
+        required: false
+        type: string
+      commit_hash:
+        description: 'Commit hash to tag (optional). Defaults to HEAD.'
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CODEARTIFACT_AWS_ROLE_ARN: ${{ vars.CODEARTIFACT_AWS_ROLE_ARN }}
+  AWS_REGION: eu-west-1
+  CODEARTIFACT_DOMAIN: ${{ vars.CODEARTIFACT_DOMAIN }}
+  CODEARTIFACT_DOMAIN_OWNER: ${{ vars.CODEARTIFACT_DOMAIN_OWNER }}
+  CODEARTIFACT_REPO: ${{ vars.CODEARTIFACT_REPO }}
+
+jobs:
+  test:
+    name: Run Tests
+    uses: ./.github/workflows/test.yml
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  release:
+    name: Tag & Release
+    needs: test
+    permissions:
+      contents: write
+      id-token: write
+    runs-on: self-hosted-arm-1gi
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout specific commit
+        if: github.event_name == 'workflow_dispatch' && inputs.commit_hash != ''
+        env:
+          TARGET_COMMIT_HASH: ${{ inputs.commit_hash }}
+        run: |
+          git fetch --all --tags
+          git checkout --detach "$TARGET_COMMIT_HASH" || (
+            git fetch origin "$TARGET_COMMIT_HASH" &&
+            git checkout --detach "$TARGET_COMMIT_HASH"
+          )
+
+      - name: Calculate Next Version
+        id: semantic
+        if: github.event_name != 'workflow_dispatch' || inputs.version == ''
+        uses: PaulHatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: "v"
+          major_pattern: "(BREAKING CHANGE:|!)"
+          minor_pattern: "^(feat|refactor)(\\(.*\\))?:"
+          version_format: "${major}.${minor}.${patch}"
+          user_format_type: "csv"
+          branch: "HEAD"
+
+      - name: Determine Version
+        id: vars
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          CALCULATED_VERSION: ${{ steps.semantic.outputs.version }}
+        run: |
+          if [ -n "$REQUESTED_VERSION" ]; then
+            echo "VERSION=$REQUESTED_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=$CALCULATED_VERSION" >> $GITHUB_OUTPUT
+          fi
+
+          echo "COMMIT_HASH_SHORT=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Validate version format
+        env:
+          VERSION: ${{ steps.vars.outputs.VERSION }}
+        run: |
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid version format '$VERSION'. Expected semver (e.g., 1.2.3)"
+            exit 1
+          fi
+
+      - name: Check tag does not already exist
+        if: github.event_name == 'push'
+        env:
+          VERSION: ${{ steps.vars.outputs.VERSION }}
+        run: |
+          git fetch --tags
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "::error::Tag v$VERSION already exists. Use workflow_dispatch to re-tag."
+            exit 1
+          fi
+
+      - name: Create Local Git Tag
+        env:
+          VERSION: ${{ steps.vars.outputs.VERSION }}
+        run: |
+          COMMIT_HASH="$(git rev-parse --short=8 HEAD)"
+          git fetch --tags
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          echo "Creating local tag v$VERSION for commit $COMMIT_HASH"
+          git tag -fa "v$VERSION" -m "Release v$VERSION" HEAD
+
+      - name: Install AWS CLI in the runner
+        run: |
+          if ! command -v aws &> /dev/null; then
+            echo "Installing AWS CLI..."
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+            unzip -q awscliv2.zip
+            sudo ./aws/install --update
+            rm -rf aws awscliv2.zip
+          fi
+          aws --version
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.CODEARTIFACT_AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get CodeArtifact auth token and repo URL
+        id: codeartifact
+        run: |
+          TOKEN=$(aws codeartifact get-authorization-token \
+            --domain ${{ env.CODEARTIFACT_DOMAIN }} \
+            --domain-owner ${{ env.CODEARTIFACT_DOMAIN_OWNER }} \
+            --query authorizationToken \
+            --output text)
+          echo "TOKEN=$TOKEN" >> $GITHUB_OUTPUT
+
+          REPO_URL=$(aws codeartifact get-repository-endpoint \
+            --domain ${{ env.CODEARTIFACT_DOMAIN }} \
+            --domain-owner ${{ env.CODEARTIFACT_DOMAIN_OWNER }} \
+            --repository ${{ env.CODEARTIFACT_REPO }} \
+            --format pypi \
+            --query repositoryEndpoint \
+            --output text)
+          echo "REPO_URL=$REPO_URL" >> $GITHUB_OUTPUT
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry and dynamic versioning plugin
+        run: pip install poetry==2.1.4 "poetry-dynamic-versioning[plugin]==1.10.0"
+
+      - name: Configure Poetry for CodeArtifact
+        env:
+          CODEARTIFACT_TOKEN: ${{ steps.codeartifact.outputs.TOKEN }}
+          REPO_URL: ${{ steps.codeartifact.outputs.REPO_URL }}
+        run: |
+          poetry config repositories.codeartifact "$REPO_URL"
+          poetry config http-basic.codeartifact aws "$CODEARTIFACT_TOKEN"
+
+      - name: Build & Publish to CodeArtifact
+        run: |
+          echo "Building version (resolved by poetry-dynamic-versioning from local tag):"
+          poetry version
+          poetry build
+          poetry publish --repository codeartifact
+
+      - name: Push Git Tag
+        env:
+          VERSION: ${{ steps.vars.outputs.VERSION }}
+        run: |
+          echo "Pushing tag v$VERSION..."
+          if git push origin "v$VERSION"; then
+            echo "Tag v$VERSION pushed successfully"
+          else
+            if git ls-remote --exit-code --tags origin "v$VERSION" > /dev/null 2>&1; then
+              echo "::error::Tag v$VERSION already exists on origin. If you intend to retag, delete the remote tag first."
+            else
+              echo "::error::Failed to push tag v$VERSION due to an unexpected error."
+            fi
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.vars.outputs.VERSION }}
+          name: v${{ steps.vars.outputs.VERSION }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          files: dist/*
