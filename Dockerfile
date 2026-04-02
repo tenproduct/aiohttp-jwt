@@ -58,7 +58,7 @@ RUN for PYTHON_VERSION in ${PYTHON_VERSIONS}; do \
 COPY pyproject.toml poetry.lock ./
 
 # Install Poetry and export requirements.
-RUN /bin/bash -l -c "python -m pip install poetry==1.4.* \
+RUN /bin/bash -l -c "python -m pip install 'poetry==2.1.4' 'poetry-plugin-export>=1.8.0' \
     && poetry export --with dev --without-hashes --format=requirements.txt > requirements.txt"
 
 # Install dependencies for all Python versions.
