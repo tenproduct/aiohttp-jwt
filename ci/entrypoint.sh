@@ -3,9 +3,8 @@
 set -xeuo pipefail
 
 # Run quality checks once under the default Python.
-pip install -e .
-flake8 --show-source aiohttp_jwt tests setup.py
-isort --check aiohttp_jwt tests setup.py
+flake8 --show-source aiohttp_jwt tests
+isort --check aiohttp_jwt tests
 
 # Run tests across all installed Python versions.
 # Coverage is generated from the first (lowest) version for SonarCloud.

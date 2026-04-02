@@ -1,3 +1,7 @@
+[project]
+name = "aiohttp-jwt"
+dynamic = ["version"]
+
 [tool.poetry]
 name = "aiohttp-jwt"
 version = "0.0.0"  # placeholder — poetry-dynamic-versioning replaces this with the git tag at build time.
