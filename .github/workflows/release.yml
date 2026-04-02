@@ -15,10 +15,6 @@ on:
         required: false
         type: string
 
-permissions:
-  contents: write
-  id-token: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -40,6 +36,9 @@ jobs:
   release:
     name: Tag & Release
     needs: test
+    permissions:
+      contents: write
+      id-token: write
     runs-on: self-hosted-arm-1gi
     timeout-minutes: 15
     steps:

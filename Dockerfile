@@ -5,7 +5,7 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /var/aiohttp-jwt/
 ARG PYTHON_VERSIONS="3.10 3.11 3.12"
 
-# Install dependencies.
+# Install dependencies and pyenv.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     make \
@@ -25,10 +25,8 @@ RUN apt-get update \
     liblzma-dev \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/* \
-    && rm -f /var/cache/apt/archives/*.deb
-
-# Install ``pyenv``.
-RUN git clone https://github.com/pyenv/pyenv /root/.pyenv
+    && rm -f /var/cache/apt/archives/*.deb \
+    && git clone https://github.com/pyenv/pyenv /root/.pyenv
 
 # Install the desired versions of Python.
 RUN for PYTHON_VERSION in ${PYTHON_VERSIONS}; do \
